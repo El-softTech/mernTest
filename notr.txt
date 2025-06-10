@@ -1,0 +1,25 @@
+#untuk jalanin ngrok di server
+ngrok start --all --config=./ngrok.yml --log=stdout
+
+
+
+ name=frontend addr=http://localhost:5173 url=https://5f94-27-50-17-14.ngrok-free.app
+ name=backend addr=http://localhost:6969 url=https://fbe7-27-50-17-14.ngrok-free.app
+
+
+cara pake clodflasre
+
+cloudflare.exe login
+cloudflare.exe tunnel --url http://localhost:6969
+
+
+ "start": "cross-env EXPO_DEVTOOLS_LISTEN_ADDRESS=192.168.56.1 REACT_NATIVE_PACKAGER_HOSTNAME=192.168.56.1 expo start --lan",
+
+
+ VITE_API_SERVER=  https://why-leaf-wellness-modules.trycloudflare.com
+# VITE_API_SERVER= http://localhost:6969
+VITE_DEEPSEEK_API_KEY=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
+
+
+MONGO_URL= "mongodb+srv://suhail:sfr20041111@cluster0.lonbk.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+SECRET_key="sfr20041111"

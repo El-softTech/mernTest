@@ -1,0 +1,8 @@
+{
+	"dependencies": {
+		"concurrently": "^9.1.2"
+	},"scripts": {
+  "dev": "concurrently  \"cd backend && pnpm dev\"  \"cd Frontend && pnpm dev\""
+}
+
+}

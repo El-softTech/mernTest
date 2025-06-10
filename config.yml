@@ -1,0 +1,6 @@
+tunnel: nama-tunnel
+credentials-file: C:\Users\LAPTOPIN.ID\.cloudflared\credentials.json
+ingress:
+  - hostname: api.example.com  # Pakai domain sendiri
+    service: http://localhost:5173
+  - service: http_status:404
