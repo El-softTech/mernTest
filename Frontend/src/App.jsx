@@ -18,7 +18,10 @@ import ProtectedRoute from "./auth/protectRoute"; // Pastikan path ini sesuai de
 import Unauthorized from "./pages/Unauthorized"; 
 import ProtecLogin from "./pages/protecLogin"; 
 import SoalUjian from "./pages/SoalUjian"; // Pastikan path ini sesuai dengan struktur folder Anda
-import FormMapel from "./Components/FormMapel"; // Pastikan path ini sesuai dengan struktur folder Anda
+import FormMapel from "./Components/FormMapel"; 
+import SuccessPage from "./Components/SuccesPage";
+import Failpage from "./Components/FailPage"; // Pastikan path ini sesuai dengan struktur folder Anda
+
 
 function App() {
   return (
@@ -32,6 +35,8 @@ function App() {
      <Route element={<ProtectedRoute allowedRoles={["Admin", "Guru", "siswa"]} />}>
        
         <Route path="/ujian/:id" element={<SoalUjian />} />
+        <Route path="/success" element={<SuccessPage />} />
+        <Route path="/fail" element={<Failpage />} />
       </Route>
     {/* Semua halaman protected di dalam layout */}
     <Route path="/" element={<Layout />}>
@@ -62,6 +67,7 @@ function App() {
         <Route path="/ujian/:id" element={<SoalUjian />} />
       </Route>
     </Route>
+    
   </Routes>
 </BrowserRouter>
 

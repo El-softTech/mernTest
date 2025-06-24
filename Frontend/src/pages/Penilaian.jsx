@@ -24,6 +24,29 @@ function Penilaian() {
     fetchMapel();
   }, []);
 
+  useEffect(() => {
+    if (kelas && jenis && mapel) {
+      const fetchDataNilai = async () => {
+        try {
+          const res = await fetch(
+            `${
+              import.meta.env.VITE_API_SERVER
+            }/api/penilaian/filter?grade=${kelas}&subject=${mapel}&examType=${jenis}`
+          );
+          const data = await res.json();
+          setDataNilai(data);
+        
+        } catch (err) {
+          console.error("Gagal mengambil data nilai:", err);
+        }
+      };
+
+      fetchDataNilai();
+    } else {
+      setDataNilai([]); // kosongkan data jika filter belum lengkap
+    }
+  }, [kelas, jenis, mapel]);
+
   // Bisa tambahkan fetch ke backend jika filter diubah
 
   return (
@@ -54,8 +77,8 @@ function Penilaian() {
             onChange={(e) => setJenis(e.target.value)}
           >
             <option value="">Pilih Jenis</option>
-            <option value="uts">UTS</option>
-            <option value="uas">UAS</option>
+            <option value="UTS">UTS</option>
+            <option value="UAS">UAS</option>
           </select>
         </div>
 
@@ -74,17 +97,6 @@ function Penilaian() {
             ))}
           </select>
         </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1">Tahun</label>
-          <input
-            type="text"
-            className="w-full border border-gray-300 rounded px-3 py-2"
-            value={tahun}
-            onChange={(e) => setTahun(e.target.value)}
-            placeholder="Contoh: 2025"
-          />
-        </div>
       </div>
 
       {/* Tabel Nilai */}
@@ -99,9 +111,9 @@ function Penilaian() {
           <tbody>
             {dataNilai.length > 0 ? (
               dataNilai.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50">
+                <tr key={item._id} className="hover:bg-gray-50">
                   <td className="px-4 py-2 border-b">{item.nama}</td>
-                  <td className="px-4 py-2 border-b">{item.nilai}</td>
+                  <td className="px-4 py-2 border-b">{item.totalBenar}</td>
                 </tr>
               ))
             ) : (

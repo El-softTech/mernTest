@@ -1,10 +1,23 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { VscWarning } from "react-icons/vsc";
 
 const shuffleArray = (arr) => [...arr].sort(() => Math.random() - 0.5);
 
+const exitFullscreen = () => {
+  if (document.exitFullscreen) {
+    document.exitFullscreen();
+  } else if (document.webkitExitFullscreen) {
+    document.webkitExitFullscreen();
+  } else if (document.msExitFullscreen) {
+    document.msExitFullscreen();
+  }
+};
+
 const SoalUjian = () => {
-  const { id } = useParams(); // format: "bahasa_indonesia-UAS-7"
+  const { id } = useParams();
   const { state } = useLocation();
   const navigate = useNavigate();
 
@@ -13,44 +26,32 @@ const SoalUjian = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [timeLeft, setTimeLeft] = useState(0);
-  const DURASI = 120 * 60; // 120 menit dalam detik
+  const [submitted, setSubmitted] = useState(false);
+  const [started, setStarted] = useState(false);
+  const DURASI = 120 * 60;
 
-  // Fullscreen & keluar auto navigate
   useEffect(() => {
-    const enterFullscreen = () => {
-      const elem = document.documentElement;
-      if (elem.requestFullscreen) {
-        elem.requestFullscreen();
-      } else if (elem.webkitRequestFullscreen) {
-        elem.webkitRequestFullscreen();
-      } else if (elem.msRequestFullscreen) {
-        elem.msRequestFullscreen();
-      }
-    };
-
+    if (!started) return;
     const handleFullscreenChange = () => {
       if (!document.fullscreenElement) {
+        toast.info("📴 Keluar dari fullscreen");
         navigate("/ujian");
       }
     };
-
-    enterFullscreen();
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () =>
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
-  }, [navigate]);
+  }, [navigate, started]);
 
-  // Waktu: ambil dari localStorage atau set baru
   useEffect(() => {
+    if (!started) return;
     const key = `startTime-${id}`;
     const now = Date.now();
     let startTime = localStorage.getItem(key);
-
     if (!startTime) {
       localStorage.setItem(key, now.toString());
       startTime = now;
     }
-
     const tick = () => {
       const elapsed = Math.floor((Date.now() - startTime) / 1000);
       const remaining = DURASI - elapsed;
@@ -59,11 +60,10 @@ const SoalUjian = () => {
         handleSubmit(true);
       }
     };
-
-    tick(); // immediately
+    tick();
     const timer = setInterval(tick, 1000);
     return () => clearInterval(timer);
-  }, [id]);
+  }, [id, started]);
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -71,13 +71,14 @@ const SoalUjian = () => {
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
-  // Fetch soal + jawaban
   useEffect(() => {
     const fetchSoal = async () => {
       try {
         const [subject, examType, grade] = id.split("-");
         const res = await fetch(
-          `${import.meta.env.VITE_API_SERVER}/api/questions?subject=${subject}&examType=${examType}&grade=${grade}`,
+          `${
+            import.meta.env.VITE_API_SERVER
+          }/api/questions?subject=${subject}&examType=${examType}&grade=${grade}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -86,20 +87,16 @@ const SoalUjian = () => {
           }
         );
         const data = await res.json();
-
         const shuffled = shuffleArray(data);
         setSoalList(shuffled);
-
         const saved = localStorage.getItem(`jawaban-${id}`);
         if (saved) setJawabanUser(JSON.parse(saved));
-
         setLoading(false);
       } catch (err) {
         setError("Gagal memuat soal.");
         setLoading(false);
       }
     };
-
     fetchSoal();
   }, [id]);
 
@@ -116,7 +113,6 @@ const SoalUjian = () => {
     soalList.forEach((soal) => {
       if (jawabanUser[soal._id] === soal.correctAnswer) totalBenar++;
     });
-
     const payload = {
       nama: state?.nama || "Anonim",
       id: state?.id || "tanpa-id",
@@ -126,9 +122,8 @@ const SoalUjian = () => {
       totalBenar,
       jawaban: jawabanUser,
     };
-
     try {
-      await fetch(`${import.meta.env.VITE_API_SERVER}/api/submit`, {
+      await fetch(`${import.meta.env.VITE_API_SERVER}/api/Penilaian`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -136,20 +131,58 @@ const SoalUjian = () => {
         },
         body: JSON.stringify(payload),
       });
-
       localStorage.removeItem(`jawaban-${id}`);
       localStorage.removeItem(`startTime-${id}`);
-
-      alert(
-        auto
-          ? `Waktu habis! Skor kamu: ${totalBenar} / ${soalList.length}`
-          : `Skor kamu: ${totalBenar} / ${soalList.length}`
-      );
-      navigate("/ujian");
+      exitFullscreen();
+      setTimeout(() => {
+        navigate("/success");
+      });
     } catch (err) {
-      alert("Gagal menyimpan jawaban.");
+       navigate("/fail");
     }
   };
+
+  if (!started) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="bg-white p-6 rounded shadow text-center">
+          <h1 className="text-xl font-bold font-serif mb-4">
+            Siap untuk Ujian?
+          </h1>
+          <div className="flex justify-center items-center ">
+            <h1 className="flex items-center gap-2 text-xl font-serif font-bold">
+              <VscWarning size={20} className="text-red-600" />
+              Note
+            </h1>
+          </div>
+
+          <p className="mb-6  font-serif">
+            Saat anda sudah memasuki ujian harap selalu dalam halaman ujian
+          </p>
+          <p className="mb-6">
+            Jangan lupa berdoa dan selamat mengerjakan, Goodluck 🎉
+          </p>
+
+          <button
+            onClick={() => {
+              const elem = document.documentElement;
+              if (elem.requestFullscreen) {
+                elem.requestFullscreen();
+              } else if (elem.webkitRequestFullscreen) {
+                elem.webkitRequestFullscreen();
+              } else if (elem.msRequestFullscreen) {
+                elem.msRequestFullscreen();
+              }
+              setStarted(true);
+            }}
+            className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition"
+          >
+            Mulai Ujian
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading)
     return <p className="text-center mt-20 text-lg">⏳ Memuat soal...</p>;
@@ -157,7 +190,11 @@ const SoalUjian = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 py-6 px-4">
-      {/* Header */}
+      {submitted && (
+        <div className="fixed top-16 left-1/2 transform -translate-x-1/2 bg-green-100 text-green-800 px-6 py-3 rounded shadow z-50">
+          ✅ Jawaban berhasil disimpan!
+        </div>
+      )}
       <div className="flex justify-between items-center mb-6 bg-white rounded-md p-4 shadow sticky top-0 z-10">
         <h2 className="text-xl font-bold text-gray-800">
           Ujian {id.replaceAll("-", " ").toUpperCase()}
@@ -166,8 +203,6 @@ const SoalUjian = () => {
           ⏰ {formatTime(Math.max(timeLeft, 0))}
         </div>
       </div>
-
-      {/* Soal */}
       <div className="grid gap-6">
         {soalList.map((soal, index) => (
           <div
@@ -177,7 +212,6 @@ const SoalUjian = () => {
             <p className="font-semibold text-gray-700 mb-4">
               {index + 1}. {soal.questionText}
             </p>
-
             <div className="flex flex-col gap-2">
               {Object.entries(soal.choices).map(([key, value]) => {
                 const isSelected = jawabanUser[soal._id] === key;
@@ -200,8 +234,6 @@ const SoalUjian = () => {
           </div>
         ))}
       </div>
-
-      {/* Submit */}
       <div className="fixed bottom-0 left-0 right-0 bg-white shadow-md p-4 flex justify-center">
         <button
           onClick={() => handleSubmit(false)}
