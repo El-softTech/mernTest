@@ -78,7 +78,7 @@ const SoalUjian = () => {
         const res = await fetch(
           `${
             import.meta.env.VITE_API_SERVER
-          }/api/questions?subject=${subject}&examType=${examType}&grade=${grade}`,
+          }/api/questions/filter?mapel=${subject}&jenis=${examType}&kelas=${grade}`,
           {
             headers: {
               "Content-Type": "application/json",

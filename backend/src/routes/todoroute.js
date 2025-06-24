@@ -328,19 +328,18 @@ router.delete("/questions/:id", async (req, res) => {
 });
 
 router.get("/questions/filter", async (req, res) => {
-  const { kelas, jenis, tahun, mapel } = req.query;
+  const { kelas, jenis, mapel } = req.query;
 
-  if (!kelas || !jenis || !tahun || !mapel) {
+  if (!kelas || !jenis || !mapel) {
     return res
       .status(400)
-      .json({ message: "kelas, jenis, tahun, dan mapel harus disertakan" });
+      .json({ message: "kelas, jenis, dan mapel harus disertakan" });
   }
 
   try {
     const questions = await Question.find({
       grade: kelas,
       examType: jenis,
-      academicYear: tahun,
       subject: mapel,
     });
 
