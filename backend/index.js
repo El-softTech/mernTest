@@ -9,7 +9,7 @@ const server = http.createServer(app);
 const port = 6969;
 const io = new Server(server, {
   cors: {
-    origin: "https://monitoring-computational-taxes-connector.trycloudflare.com",
+    origin: "http://localhost:5173",
     methods: ["GET", "POST"],
   },
 });
@@ -21,7 +21,7 @@ const todoRoutes = require("./src/routes/todoroute");
 // // app.use("/api/todos", todoRoutes);
 app.use("/api", todoRoutes);
 
-server.listen(port, () => {
+server.listen(port,'0.0.0.0',() => {
   console.log(`✅ Server running on port ${port}`);
 });
 

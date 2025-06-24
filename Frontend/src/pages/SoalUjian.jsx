@@ -1,23 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 
-
-// Shuffle helper
 const shuffleArray = (arr) => [...arr].sort(() => Math.random() - 0.5);
 
 const SoalUjian = () => {
   const { id } = useParams(); // format: "bahasa_indonesia-UAS-7"
-  const { state } = useLocation(); // dari navigate()
+  const { state } = useLocation();
   const navigate = useNavigate();
 
   const [soalList, setSoalList] = useState([]);
   const [jawabanUser, setJawabanUser] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [timeLeft, setTimeLeft] = useState(120 * 60); // 120 menit
-  const [showExitModal, setShowExitModal] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0);
+  const DURASI = 120 * 60; // 120 menit dalam detik
 
-  // Fullscreen logic
+  // Fullscreen & keluar auto navigate
   useEffect(() => {
     const enterFullscreen = () => {
       const elem = document.documentElement;
@@ -32,32 +30,40 @@ const SoalUjian = () => {
 
     const handleFullscreenChange = () => {
       if (!document.fullscreenElement) {
-        setShowExitModal(true);
+        navigate("/ujian");
       }
     };
 
     enterFullscreen();
     document.addEventListener("fullscreenchange", handleFullscreenChange);
-
-    return () => {
+    return () =>
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
-    };
-  }, []);
+  }, [navigate]);
 
-  // Timer countdown
+  // Waktu: ambil dari localStorage atau set baru
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          handleSubmit(true); // Auto submit
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    const key = `startTime-${id}`;
+    const now = Date.now();
+    let startTime = localStorage.getItem(key);
+
+    if (!startTime) {
+      localStorage.setItem(key, now.toString());
+      startTime = now;
+    }
+
+    const tick = () => {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      const remaining = DURASI - elapsed;
+      setTimeLeft(remaining);
+      if (remaining <= 0) {
+        handleSubmit(true);
+      }
+    };
+
+    tick(); // immediately
+    const timer = setInterval(tick, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [id]);
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
@@ -65,15 +71,13 @@ const SoalUjian = () => {
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
-  // Fetch soal
+  // Fetch soal + jawaban
   useEffect(() => {
     const fetchSoal = async () => {
       try {
         const [subject, examType, grade] = id.split("-");
         const res = await fetch(
-          `${
-            import.meta.env.VITE_API_SERVER
-          }/api/questions?subject=${subject}&examType=${examType}&grade=${grade}`,
+          `${import.meta.env.VITE_API_SERVER}/api/questions?subject=${subject}&examType=${examType}&grade=${grade}`,
           {
             headers: {
               "Content-Type": "application/json",
@@ -83,9 +87,12 @@ const SoalUjian = () => {
         );
         const data = await res.json();
 
-        // Hanya shuffle soal
-        const shuffledSoal = shuffleArray(data);
-        setSoalList(shuffledSoal);
+        const shuffled = shuffleArray(data);
+        setSoalList(shuffled);
+
+        const saved = localStorage.getItem(`jawaban-${id}`);
+        if (saved) setJawabanUser(JSON.parse(saved));
+
         setLoading(false);
       } catch (err) {
         setError("Gagal memuat soal.");
@@ -97,23 +104,22 @@ const SoalUjian = () => {
   }, [id]);
 
   const handleChange = (soalId, pilihan) => {
-    setJawabanUser((prev) => ({
-      ...prev,
-      [soalId]: pilihan,
-    }));
+    setJawabanUser((prev) => {
+      const updated = { ...prev, [soalId]: pilihan };
+      localStorage.setItem(`jawaban-${id}`, JSON.stringify(updated));
+      return updated;
+    });
   };
 
   const handleSubmit = async (auto = false) => {
     let totalBenar = 0;
     soalList.forEach((soal) => {
-      if (jawabanUser[soal._id] === soal.correctAnswer) {
-        totalBenar++;
-      }
+      if (jawabanUser[soal._id] === soal.correctAnswer) totalBenar++;
     });
 
     const payload = {
-      nama: state.nama,
-      id: state.id,
+      nama: state?.nama || "Anonim",
+      id: state?.id || "tanpa-id",
       subject: soalList[0]?.subject || "",
       examType: soalList[0]?.examType || "",
       grade: soalList[0]?.grade || "",
@@ -130,6 +136,9 @@ const SoalUjian = () => {
         },
         body: JSON.stringify(payload),
       });
+
+      localStorage.removeItem(`jawaban-${id}`);
+      localStorage.removeItem(`startTime-${id}`);
 
       alert(
         auto
@@ -148,47 +157,13 @@ const SoalUjian = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 py-6 px-4">
-      {/* Exit modal */}
-      {showExitModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 shadow-lg max-w-md w-full">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">
-              Keluar dari fullscreen?
-            </h2>
-            <p className="mb-6 text-gray-600">
-              kamu yakin ingin keluar dari mode fullscreen? Jika iya, jawaban kamu akan hilang!!
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => {
-                  setShowExitModal(false);
-                  document.documentElement.requestFullscreen?.(); // masuk lagi ke fullscreen
-                }}
-                className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300"
-              >
-                Batal
-              </button>
-              <button
-                onClick={() => {
-                  setShowExitModal(false);
-                  handleSubmit(false); // simpan lalu keluar
-                }}
-                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-              >
-                Ya, keluar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex justify-between items-center mb-6 bg-white rounded-md p-4 shadow sticky top-0 z-10">
         <h2 className="text-xl font-bold text-gray-800">
           Ujian {id.replaceAll("-", " ").toUpperCase()}
         </h2>
         <div className="text-lg font-mono bg-yellow-100 text-yellow-800 px-4 py-1 rounded">
-          ⏰ {formatTime(timeLeft)}
+          ⏰ {formatTime(Math.max(timeLeft, 0))}
         </div>
       </div>
 
@@ -210,12 +185,11 @@ const SoalUjian = () => {
                   <div
                     key={key}
                     onClick={() => handleChange(soal._id, key)}
-                    className={`cursor-pointer border rounded-lg p-3 transition
-                      ${
-                        isSelected
-                          ? "bg-green-500 border-green-300 text-white"
-                          : "bg-white hover:bg-gray-100"
-                      }`}
+                    className={`cursor-pointer border rounded-lg p-3 transition ${
+                      isSelected
+                        ? "bg-green-500 border-green-300 text-white"
+                        : "bg-white hover:bg-gray-100"
+                    }`}
                   >
                     <span className="font-semibold mr-2">{key}.</span>
                     <span>{value}</span>

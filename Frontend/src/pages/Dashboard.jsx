@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { FaChalkboardTeacher, FaUserGraduate, FaKey } from "react-icons/fa";
+import { FaChalkboardTeacher, FaUserGraduate, FaKey ,FaBook} from "react-icons/fa";
 import DashboardCard from "../Components/DashboardCard";
 
 const Dashboard = () => {
@@ -56,8 +56,14 @@ const Dashboard = () => {
         <DashboardCard
           icon={<FaKey size={30} className="text-yellow-500" />}
           title="Token"
-          description="100 Token tersedia"
+          description="Token digunakan untuk masuk halaman ujian"
           href="/token"
+        />
+         <DashboardCard
+          icon={<FaBook size={30} className="text-teal-300" />}
+          title="Mata pelajaran"
+          description="Mata pelajaran yang tersedia"
+          href="/mapel"
         />
       </div>
     </div>

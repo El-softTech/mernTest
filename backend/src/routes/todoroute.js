@@ -5,6 +5,7 @@ const Guru = require("../model/guru");
 const Token = require("../model/token");
 const Question = require("../model/SoalUjian");
 const crypto = require('crypto');
+const Mapel = require("../model/mapel");
 
 
 router.get("/Siswa", async (req, res) => {
@@ -214,7 +215,65 @@ router.post('/validate-token', async (req, res) => {
 });
 
 
+// === Mapel / Subjects ===
+router.get('/mapel', async (req, res) => {
+  try { 
+    const mapel = await Mapel.find();
+    res.json(mapel);
+  } catch(error){
+    res.status(500).json({ message: 'Gagal mengambil mata pelajaran', error });
 
+  }
+});
+
+router.post('/mapel', async (req,res) =>{
+   const { nama} = req.body;
+   console.log('Menerima data:', req.body);
+   
+   if (!nama){
+    return res.json({ message: 'Nama mata pelajaran harus diisi' });
+   }
+  try { 
+   const newMapel = new Mapel({ nama });
+   await newMapel.save();
+   res.json({ data : newMapel});
+  
+  } catch(error){
+    res.status(500).json({ message: 'Gagal menambahkan mata pelajaran', error });
+  }
+});
+
+router.put('/mapel/:id', async (req, res) => {
+  try {
+    const updatedMapel = await Mapel.findByIdAndUpdate(
+      req.params.id,
+      { nama: req.body.nama },
+      { new: true } // ini penting agar dapat data terbaru
+    );
+
+    if (!updatedMapel) {
+      return res.status(404).json({ message: 'Mata pelajaran tidak ditemukan' });
+    }
+
+    res.json({ message: 'Mata pelajaran berhasil diperbarui', data: updatedMapel });
+  } catch (error) {
+    res.status(500).json({ message: 'Gagal memperbarui mata pelajaran', error });
+  }
+});
+
+
+
+router.delete('/mapel/:id', async (req, res) => {
+  try {
+    const deleted = await Mapel.findByIdAndDelete(req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ message: 'Mapel tidak ditemukan' });
+    }
+    res.json({ message: 'Mapel berhasil dihapus' });
+  } catch (error) {
+    res.status(500).json({ message: 'Gagal menghapus mapel', error });
+  }
+});
 
 
 // === Soal / Questions ===
@@ -228,6 +287,7 @@ router.get('/questions', async (req, res) => {
 });
 
 router.post('/questions', async (req, res) => {
+   
   try {
     const newQuestion = new Question(req.body);
     await newQuestion.save();
@@ -284,6 +344,37 @@ router.get('/questions/filter', async (req, res) => {
     res.status(500).json({ message: 'Terjadi kesalahan saat mengambil soal', error });
   }
 });
+
+// Hapus semua siswa berdasarkan kelas tertentu
+router.delete("/Siswa/kelas/:kelas", async (req, res) => {
+  const kelas = parseInt(req.params.kelas);
+  if (isNaN(kelas)) return res.status(400).json({ message: "Kelas harus berupa angka." });
+
+  try {
+    const result = await Siswa.deleteMany({ kelas });
+    res.json({ message: `${result.deletedCount} siswa kelas ${kelas} berhasil dihapus.` });
+  } catch (error) {
+    res.status(500).json({ message: "Gagal menghapus siswa.", error: error.message });
+  }
+});
+
+// Naikkan kelas semua siswa dari kelas tertentu
+router.put("/Siswa/kelas/:kelas", async (req, res) => {
+  const kelasLama = parseInt(req.params.kelas);
+  const { kelasBaru } = req.body;
+
+  if (isNaN(kelasLama) || isNaN(kelasBaru)) {
+    return res.status(400).json({ message: "Kelas harus berupa angka." });
+  }
+
+  try {
+    const updated = await Siswa.updateMany({ kelas: kelasLama }, { kelas: kelasBaru });
+    res.json({ message: `${updated.modifiedCount} siswa berhasil dinaikkan ke kelas ${kelasBaru}` });
+  } catch (error) {
+    res.status(500).json({ message: "Gagal menaikkan kelas.", error: error.message });
+  }
+});
+
 
 
 router.post("/login", async (req, res) => {

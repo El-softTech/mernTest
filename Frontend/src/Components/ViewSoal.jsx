@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import {useeffect} from "react";
 
 const ViewSoal = () => {
   const [filters, setFilters] = useState({
@@ -14,9 +15,26 @@ const ViewSoal = () => {
   const [filteredQuestions, setFilteredQuestions] = useState([]);
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [showModal, setShowModal] = useState(false);
-
   const [deleteModal, setDeleteModal] = useState(false);
   const [questionToDelete, setQuestionToDelete] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const [mapelList, setMapelList] = useState([]);
+
+  useEffect(() => {
+    const fetchMapel = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_SERVER}/api/mapel`);
+        const data = await res.json();
+
+        setMapelList(data);
+      } catch (err) {
+        console.error("Gagal mengambil data mapel:", err);
+      }
+    };
+
+    fetchMapel();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -31,7 +49,11 @@ const ViewSoal = () => {
       return;
     }
 
-    const url = `${import.meta.env.VITE_API_SERVER}/api/questions/filter?kelas=${grade}&jenis=${examType}&mapel=${subject}&tahun=${academicYear}`;
+    setLoading(true);
+
+    const url = `${
+      import.meta.env.VITE_API_SERVER
+    }/api/questions/filter?kelas=${grade}&jenis=${examType}&mapel=${subject}&tahun=${academicYear}`;
 
     try {
       const response = await fetch(url, {
@@ -41,35 +63,22 @@ const ViewSoal = () => {
           "ngrok-skip-browser-warning": "true",
         },
       });
+
       if (!response.ok) throw new Error("Gagal mengambil soal");
       const data = await response.json();
       setAllQuestions(data);
     } catch (error) {
       console.error(error);
       toast.error("Tidak ada soal tersedia.");
+      setAllQuestions([]);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    const { grade, examType, subject, academicYear } = filters;
-    if (grade && examType && subject && academicYear) {
-      fetchQuestions(); 
-    } else {
-      setAllQuestions([]); 
-    }
-  }, [filters]); 
-  
-
-  useEffect(() => {
-    const result = allQuestions.filter(
-      (q) =>
-        (!filters.grade || q.grade === filters.grade) &&
-        (!filters.examType || q.examType === filters.examType) &&
-        (!filters.subject || q.subject === filters.subject) &&
-        (!filters.academicYear || q.academicYear === filters.academicYear)
-    );
-    setFilteredQuestions(result);
-  }, [filters, allQuestions]);
+    setFilteredQuestions(allQuestions);
+  }, [allQuestions]);
 
   const handleEdit = (question) => {
     setEditingQuestion(question);
@@ -96,9 +105,8 @@ const ViewSoal = () => {
       if (!response.ok) throw new Error("Gagal menghapus");
       toast.success("Soal berhasil dihapus.");
       setAllQuestions((prev) => prev.filter((q) => q._id !== questionToDelete));
-
-    setDeleteModal(false);
-    setQuestionToDelete(null);
+      setDeleteModal(false);
+      setQuestionToDelete(null);
     } catch (error) {
       toast.error("Gagal hapus soal.");
     }
@@ -107,7 +115,9 @@ const ViewSoal = () => {
   const submitEdit = async () => {
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_SERVER}/api/questions/${editingQuestion._id}`,
+        `${import.meta.env.VITE_API_SERVER}/api/questions/${
+          editingQuestion._id
+        }`,
         {
           method: "PUT",
           headers: {
@@ -131,8 +141,8 @@ const ViewSoal = () => {
       <h1 className="text-xl font-bold mb-4">Lihat Soal</h1>
 
       {/* Filter */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-      <input
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+        <input
           type="text"
           name="academicYear"
           placeholder="Tahun Ajaran"
@@ -141,44 +151,76 @@ const ViewSoal = () => {
           className="p-2 border rounded"
         />
 
-        <select name="grade" value={filters.grade} onChange={handleChange} className="p-2 border rounded">
+        <select
+          name="grade"
+          value={filters.grade}
+          onChange={handleChange}
+          className="p-2 border rounded"
+        >
           <option value="">Kelas</option>
           <option value="7">Kelas 7</option>
           <option value="8">Kelas 8</option>
           <option value="9">Kelas 9</option>
         </select>
 
-        <select name="examType" value={filters.examType} onChange={handleChange} className="p-2 border rounded">
+        <select
+          name="examType"
+          value={filters.examType}
+          onChange={handleChange}
+          className="p-2 border rounded"
+        >
           <option value="">Jenis Ujian</option>
           <option value="UTS">UTS</option>
           <option value="UAS">UAS</option>
         </select>
 
-        <select name="subject" value={filters.subject} onChange={handleChange} className="p-2 border rounded">
-        <option value="">Mata Pelajaran</option>
-          <option value="bahasa_inggris">Bahasa Inggris</option>
-          <option value="ppkn">PPKn</option>
-          <option value="informatika">Informatika</option>
-          <option value="bahasa_indonesia">Bahasa Indonesia</option>
-          <option value="ips">IPS</option>
-          <option value="matematika">MTK</option>
-          <option value="kemuhammadiyahan">Kemuhammadiyahan</option>
-          <option value="fiqih">Fiqih</option>
-          <option value="aqidah_akhlak">Aqidah Akhlak</option>
-          <option value="tarikh_islam">Tarikh Islam</option>
-          <option value="bahasa_arab">Bahasa Arab</option>
-          <option value="alquran_hadits">Al-Qur'an Hadits</option>
-          <option value="sbk">SBK</option>
-          <option value="ipa">IPA</option>
-          <option value="pjok">PJOK</option>
+        <select
+          name="subject"
+          value={filters.subject}
+          onChange={handleChange}
+          className="p-2 border rounded"
+        >
+         <option value="">Pilih Mata Pelajaran</option>
+            {mapelList?.map((mapel) => (
+              <option key={mapel._id} value={mapel.nama}>
+                {mapel.nama}
+              </option>
+            ))}
         </select>
-
       </div>
 
-      {/* Soal Card */}
+      {/* Tombol Submit */}
+      <button
+        onClick={fetchQuestions}
+        disabled={
+          !filters.grade ||
+          !filters.examType ||
+          !filters.subject ||
+          !filters.academicYear
+        }
+        className={`w-full md:w-auto px-4 py-2 rounded text-white font-semibold mb-6 ${
+          !filters.grade ||
+          !filters.examType ||
+          !filters.subject ||
+          !filters.academicYear
+            ? "bg-gray-400 cursor-not-allowed"
+            : "bg-green-600 hover:bg-green-700"
+        }`}
+      >
+        Tampilkan Soal
+      </button>
+
+      {/* Loading */}
+      {loading && (
+        <p className="text-center text-blue-600">Mengambil soal...</p>
+      )}
+
+      {/* Daftar Soal */}
       <div className="space-y-4">
-        {filteredQuestions.length === 0 ? (
-          <p className="text-gray-500">Tidak ada soal yang cocok dengan filter.</p>
+        {filteredQuestions.length === 0 && !loading ? (
+          <p className="text-gray-500">
+            Tidak ada soal yang cocok dengan filter.
+          </p>
         ) : (
           filteredQuestions.map((q) => (
             <div key={q._id} className="border p-4 rounded shadow-sm bg-white">
@@ -187,7 +229,13 @@ const ViewSoal = () => {
                 {["A", "B", "C", "D", "E"].map((opt) =>
                   q.choices[opt] ? (
                     <li key={opt}>
-                      <span className={q.correctAnswer === opt ? "font-bold text-green-600" : ""}>
+                      <span
+                        className={
+                          q.correctAnswer === opt
+                            ? "font-bold text-green-600"
+                            : ""
+                        }
+                      >
                         {opt}. {q.choices[opt]}
                       </span>
                     </li>
@@ -195,11 +243,19 @@ const ViewSoal = () => {
                 )}
               </ul>
               <p className="text-sm text-gray-500 mt-2">
-                Mapel: {q.subject} | Kelas: {q.grade} | Ujian: {q.examType} | Tahun: {q.academicYear}
+                Mapel: {q.subject} | Kelas: {q.grade} | Ujian: {q.examType} |
+                Tahun: {q.academicYear}
               </p>
               <div className="flex gap-3 mt-3">
-                <button onClick={() => handleEdit(q)} className="text-blue-600">Edit</button>
-                <button onClick={() => handleDeleteClick(q._id)} className="text-red-600">Hapus</button>
+                <button onClick={() => handleEdit(q)} className="text-blue-600">
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDeleteClick(q._id)}
+                  className="text-red-600"
+                >
+                  Hapus
+                </button>
               </div>
             </div>
           ))
@@ -261,10 +317,16 @@ const ViewSoal = () => {
               ))}
             </select>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 bg-gray-300 rounded">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 bg-gray-300 rounded"
+              >
                 Batal
               </button>
-              <button onClick={submitEdit} className="px-4 py-2 bg-blue-500 text-white rounded">
+              <button
+                onClick={submitEdit}
+                className="px-4 py-2 bg-blue-500 text-white rounded"
+              >
                 Simpan
               </button>
             </div>

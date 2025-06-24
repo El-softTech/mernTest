@@ -18,6 +18,7 @@ import ProtectedRoute from "./auth/protectRoute"; // Pastikan path ini sesuai de
 import Unauthorized from "./pages/Unauthorized"; 
 import ProtecLogin from "./pages/protecLogin"; 
 import SoalUjian from "./pages/SoalUjian"; // Pastikan path ini sesuai dengan struktur folder Anda
+import FormMapel from "./Components/FormMapel"; // Pastikan path ini sesuai dengan struktur folder Anda
 
 function App() {
   return (
@@ -45,16 +46,17 @@ function App() {
         <Route path="guru/edit/:id" element={<GuruEdit />} />
         <Route path="token" element={<TokenUjian />} />
         <Route path="token/tambah" element={<FormToken />} />
+        <Route path="mapel" element={<FormMapel />} />
       </Route>
 
-      {/* Admin & Guru */}
+      
       <Route element={<ProtectedRoute allowedRoles={["Admin", "Guru"]} />}>
         <Route path="isi-soal" element={<InputSoal />} />
         <Route path="penilaian" element={<Penilaian />} />
         <Route path="liat-soal" element={<ViewSoal />} />
       </Route>
 
-      {/* Semua role bisa ujian */}
+      
       <Route element={<ProtectedRoute allowedRoles={["Admin", "Guru", "siswa"]} />}>
         <Route path="ujian" element={<Ujian />} />
         <Route path="/ujian/:id" element={<SoalUjian />} />

@@ -20,33 +20,16 @@ const questionSchema = new mongoose.Schema({
   },
   subject: {
     type: String,
-    enum: [
-      'bahasa_inggris',
-      'ppkn',
-      'informatika',
-      'bahasa_indonesia',
-      'ips',
-      'matematika',
-      'kemuhammadiyahan',
-      'fiqih',
-      'aqidah_akhlak',
-      'tarikh_islam',
-      'bahasa_arab',
-      'alquran_hadits',
-      'sbk',
-      'ipa',
-      'pjok',
-    ],
     required: true,
   },
   grade: {
     type: String,
-    enum: ['7', '8', '9'], // Kelas 7, 8, 9
+   
     required: true,
   },
   examType: {
     type: String,
-    enum: ['UTS', 'UAS'], // Jenis ujian UTS atau UAS
+  
     required: true,
   },
   academicYear: {

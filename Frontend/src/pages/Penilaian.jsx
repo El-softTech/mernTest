@@ -1,13 +1,28 @@
-import React, { useState } from 'react';
-
+import React, { useState } from "react";
+import { useEffect } from "react";
 function Penilaian() {
-  const [kelas, setKelas] = useState('');
-  const [jenis, setJenis] = useState('');
-  const [mapel, setMapel] = useState('');
-  const [tahun, setTahun] = useState('');
-  const [dataNilai, setDataNilai] = useState([
-   
-  ]);
+  const [kelas, setKelas] = useState("");
+  const [jenis, setJenis] = useState("");
+  const [mapel, setMapel] = useState("");
+  const [tahun, setTahun] = useState("");
+  const [dataNilai, setDataNilai] = useState([]);
+
+  const [mapelList, setMapelList] = useState([]);
+
+  useEffect(() => {
+    const fetchMapel = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_SERVER}/api/mapel`);
+        const data = await res.json();
+
+        setMapelList(data);
+      } catch (err) {
+        console.error("Gagal mengambil data mapel:", err);
+      }
+    };
+
+    fetchMapel();
+  }, []);
 
   // Bisa tambahkan fetch ke backend jika filter diubah
 
@@ -51,10 +66,12 @@ function Penilaian() {
             value={mapel}
             onChange={(e) => setMapel(e.target.value)}
           >
-            <option value="">Pilih Mapel</option>
-            <option value="matematika">Matematika</option>
-            <option value="ipa">IPA</option>
-            <option value="ips">IPS</option>
+            <option value="">Pilih Mata Pelajaran</option>
+            {mapelList?.map((mapel) => (
+              <option key={mapel._id} value={mapel.nama}>
+                {mapel.nama}
+              </option>
+            ))}
           </select>
         </div>
 

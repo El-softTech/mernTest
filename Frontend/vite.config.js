@@ -9,7 +9,8 @@ export default defineConfig({
     allowedHosts: [
       '2c0f-103-47-133-189.ngrok-free.app', // Domain Ngrok spesifik Anda
       '.ngrok-free.app' ,
-      'monitoring-computational-taxes-connector.trycloudflare.com'
+      'soup-refused-nm-office.trycloudflare.com',
+       '.repl.co'
       
     ],
     // hmr: {

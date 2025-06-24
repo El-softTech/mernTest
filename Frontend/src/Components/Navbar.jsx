@@ -167,19 +167,7 @@ export function DefaultSidebar() {
               );
             })}
 
-            <ListItem
-              className="hover:bg-gray-700 text-gray-300 mt-4"
-              onClick={() => {
-                if (isMobile) setSidebarOpen(false);
-              }}
-            >
-              <ListItemPrefix>
-                <PowerIcon className="h-5 w-5" />
-              </ListItemPrefix>
-              {(sidebarOpen || !isMobile) && (
-                <span className="ml-2 text-sm">Logout</span>
-              )}
-            </ListItem>
+            
           </List>
         </div>
       </Card>

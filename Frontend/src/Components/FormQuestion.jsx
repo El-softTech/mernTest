@@ -3,8 +3,11 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Lottie from "lottie-react";
 import jamAnim from "../assets/jam.json";
+import { useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 export default function FormQuestionWithAI() {
+  const navigate = useNavigate();
   // State form manual dan juga untuk generate AI
   const [form, setForm] = useState({
     questionText: "",
@@ -24,6 +27,24 @@ export default function FormQuestionWithAI() {
   });
 
   const [loading, setLoading] = useState(false);
+
+  const [mapelList, setMapelList] = useState([]);
+
+  useEffect(() => {
+    
+    const fetchMapel = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_SERVER}/api/mapel`);
+        const data = await res.json();
+        
+        setMapelList(data); 
+      } catch (err) {
+        console.error("Gagal mengambil data mapel:", err);
+      }
+    };
+
+    fetchMapel();
+  }, []);
 
   // Handle perubahan input form manual
   const handleChange = (e) => {
@@ -52,11 +73,26 @@ export default function FormQuestionWithAI() {
 
     setLoading(true);
 
-    const prompt = `Buatkan 1 soal pilihan ganda mata pelajaran ${aiInput.mapel} tentang ${aiInput.materi} untuk kelas ${aiInput.grade} dengan:
-- Tingkat kesulitan sesuai kelas
-- 5 opsi jawaban (A-E)
-- Sertakan kunci jawaban
-- Format respon dalam JSON seperti ini: {"soal": "...", "pilihan": {"A": "...", "B": "...", "C": "...", "D": "...", "E": "..."}, "jawaban": "A"}`;
+    const prompt = `
+Buatkan 1 soal pilihan ganda mata pelajaran ${aiInput.mapel} tentang ${aiInput.materi} untuk kelas ${aiInput.grade}.
+- Tingkat kesulitan sesuai kelas.
+- Gunakan 5 opsi jawaban (A-E).
+- Sertakan kunci jawaban.
+
+**Balas hanya dengan JSON tanpa penjelasan, tanpa tambahan teks apapun.**
+Contoh format:
+{
+  "soal": "Pertanyaan di sini...",
+  "pilihan": {
+    "A": "Opsi A",
+    "B": "Opsi B",
+    "C": "Opsi C",
+    "D": "Opsi D",
+    "E": "Opsi E"
+  },
+  "jawaban": "A"
+}
+`;
 
     try {
       const response = await fetch(
@@ -110,7 +146,7 @@ export default function FormQuestionWithAI() {
       toast.success("Soal berhasil digenerate dan masuk ke form.");
     } catch (err) {
       console.error("Error generate soal:", err);
-      toast.error(`Gagal generate soal: ${err.message}`);
+      toast.error(`Gagal generate soal coba ulangi lagi`);
     }
 
     setLoading(false);
@@ -163,6 +199,8 @@ export default function FormQuestionWithAI() {
       console.error(error);
       toast.error("Terjadi kesalahan saat menyimpan soal.");
     }
+
+    console.log("Data yang dikirim ke backend:", form);
   };
 
   return (
@@ -209,21 +247,20 @@ export default function FormQuestionWithAI() {
           disabled={loading}
           className="w-full bg-blue-600 hover:bg-blue-700 transition-colors text-white py-3 rounded-md font-semibold shadow-md"
         >
-         {loading ? (
-  <div className="flex justify-center items-center min-h-[50px]">
-    <div className="flex items-center space-x-2">
-      <p className="text-3xl text-amber-50">Generate soal</p>
-      <Lottie
-        animationData={jamAnim}
-        loop={true}
-        style={{ width: 50, height: 100 }}
-      />
-    </div>
-  </div>
-) : (
-  "Generate Soal AI"
-)}
-
+          {loading ? (
+            <div className="flex justify-center items-center min-h-[50px]">
+              <div className="flex items-center space-x-2">
+                <p className="text-3xl text-amber-50">Generate soal</p>
+                <Lottie
+                  animationData={jamAnim}
+                  loop={true}
+                  style={{ width: 50, height: 100 }}
+                />
+              </div>
+            </div>
+          ) : (
+            "Generate Soal AI"
+          )}
         </button>
       </div>
 
@@ -290,13 +327,11 @@ export default function FormQuestionWithAI() {
             required
           >
             <option value="">Pilih Mata Pelajaran</option>
-            <option value="Bahasa Inggris">Bahasa Inggris</option>
-            <option value="PPKn">PPKn</option>
-            <option value="Informatika">Informatika</option>
-            <option value="Bahasa Indonesia">Bahasa Indonesia</option>
-            <option value="IPS">IPS</option>
-            <option value="Matematika">MTK</option>
-            <option value="Kemuhammadiyahan">Kemuhammadiyahan</option>
+            {mapelList?.map((mapel) => (
+              <option key={mapel._id} value={mapel.nama}>
+                {mapel.nama}
+              </option>
+            ))}
           </select>
 
           <select
@@ -307,9 +342,9 @@ export default function FormQuestionWithAI() {
             required
           >
             <option value="">Pilih Kelas</option>
-            <option value="10">10</option>
-            <option value="11">11</option>
-            <option value="12">12</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
           </select>
         </div>
 
@@ -323,13 +358,12 @@ export default function FormQuestionWithAI() {
             <option value="">Pilih Jenis Ujian (opsional)</option>
             <option value="UTS">UTS</option>
             <option value="UAS">UAS</option>
-            <option value="Harian">Harian</option>
           </select>
 
           <input
             type="text"
             name="academicYear"
-            placeholder="Tahun Ajaran (misal: 2024/2025)"
+            placeholder="Tahun Ajaran misal: 2023"
             value={form.academicYear}
             onChange={handleChange}
             className="p-3 border rounded-md shadow-sm focus:ring focus:ring-indigo-200"
@@ -341,6 +375,12 @@ export default function FormQuestionWithAI() {
           className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-md shadow-md transition"
         >
           Simpan Soal
+        </button>
+        <button
+          onClick={() => navigate("/liat-soal")}
+          className="mt-6 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-md shadow-md transition"
+        >
+          Lihat Semua Soal
         </button>
       </form>
 
