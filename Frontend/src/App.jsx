@@ -60,6 +60,8 @@ function App() {
         <Route path="penilaian" element={<Penilaian />} />
         <Route path="liat-soal" element={<ViewSoal />} />
       </Route>
+      
+      
 
       
       <Route element={<ProtectedRoute allowedRoles={["Admin", "Guru", "siswa"]} />}>
@@ -67,6 +69,7 @@ function App() {
         <Route path="/ujian/:id" element={<SoalUjian />} />
       </Route>
     </Route>
+    
     
   </Routes>
 </BrowserRouter>
